@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#2563EB">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>QR Code Generator</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    :root {
+      --blue: #2563EB; --purple: #7C3AED; --cyan: #06B6D4;
+      --pink: #EC4899; --orange: #F97316; --green: #10B981;
+      --gradient-1: linear-gradient(135deg, #2563EB, #7C3AED);
+      --gradient-2: linear-gradient(135deg, #06B6D4, #2563EB);
+      --glass-bg: rgba(255, 255, 255, 0.25);
+      --glass-border: rgba(255, 255, 255, 0.4);
+      --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      --radius: 20px; --font: 'Poppins', sans-serif;
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .light-mode {
+      --bg: #f0f4ff; --bg-secondary: #e8edf5;
+      --text: #1e293b; --text-secondary: #64748b;
+      --card-bg: rgba(255, 255, 255, 0.7);
+      --header-bg: rgba(255, 255, 255, 0.8);
+      --nav-bg: rgba(255, 255, 255, 0.9);
+    }
+
+    .dark-mode {
+      --bg: #0f172a; --bg-secondary: #1e293b;
+      --text: #f1f5f9; --text-secondary: #94a3b8;
+      --card-bg: rgba(30, 41, 59, 0.7);
+      --header-bg: rgba(15, 23, 42, 0.8);
+      --nav-bg: rgba(15, 23, 42, 0.9);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: var(--font); background: var(--bg);
+      color: var(--text); transition: var(--transition);
+      min-height: 100vh; overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body::before {
+      content: ''; position: fixed; top: -50%; left: -50%;
+      width: 200%; height: 200%;
+      background: radial-gradient(circle at 20% 30%, rgba(37,99,235,0.1) 0%, transparent 40%),
+                  radial-gradient(circle at 80% 20%, rgba(124,58,237,0.08) 0%, transparent 40%),
+                  radial-gradient(circle at 60% 80%, rgba(6,182,212,0.08) 0%, transparent 40%);
+      z-index: -1; animation: bgShift 20s ease-in-out infinite;
+    }
+
+    @keyframes bgShift { 0%,100% { transform: translate(0,0); } 33% { transform: translate(2%,-1%); } 66% { transform: translate(-1%,2%); } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes fadeInUp { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+    @keyframes float { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-10px); } }
+    @keyframes slideInRight { from { opacity:0; transform:translateX(40px); } to { opacity:1; transform:translateX(0); } }
+
+    #app { max-width: 900px; margin: 0 auto; padding: 16px; padding-bottom: 130px; }
+
+    /* Splash */
+    .splash-screen {
+      position: fixed; top:0; left:0; width:100%; height:100%;
+      background: var(--gradient-1); display:flex;
+      flex-direction:column; align-items:center; justify-content:center;
+      z-index:9999; transition: opacity 0.5s, visibility 0.5s;
+    }
+    .splash-screen.hidden { opacity:0; visibility:hidden; }
+    .splash-logo { text-align:center; color:white; animation:fadeInUp 0.6s ease; }
+    .splash-logo i { font-size:80px; margin-bottom:16px; }
+    .splash-logo h1 { font-size:40px; font-weight:800; }
+    .splash-loader {
+      width:48px; height:48px; border:4px solid rgba(255,255,255,0.3);
+      border-top-color:white; border-radius:50%; margin-top:32px;
+      animation:spin 0.8s linear infinite;
+    }
+
+    /* Auth */
+    .auth-page { 
+      display:flex; align-items:center; justify-content:center; min-height:85vh; 
+      animation: fadeInUp 0.5s ease;
+    }
+    .auth-card {
+      background:var(--card-bg); backdrop-filter:blur(20px);
+      border-radius:28px; border:2px solid var(--glass-border);
+      box-shadow:0 20px 60px rgba(0,0,0,0.15);
+      padding:36px 28px; width:100%; max-width:420px; text-align:center;
+      animation: slideInRight 0.5s ease;
+    }
+    .auth-logo { font-size:50px; background:var(--gradient-1); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .auth-title { font-size:26px; font-weight:800; margin-bottom:4px; }
+    .auth-subtitle { font-size:13px; color:var(--text-secondary); margin-bottom:20px; }
+    .auth-tabs { display:flex; gap:8px; margin-bottom:20px; background:var(--bg-secondary); border-radius:14px; padding:4px; }
+    .auth-tab {
+      flex:1; padding:12px; border-radius:12px; border:none;
+      background:transparent; color:var(--text-secondary);
+      font-family:var(--font); font-weight:600; font-size:14px; cursor:pointer; transition:var(--transition);
+    }
+    .auth-tab.active { background:var(--gradient-1); color:white; }
+    .auth-input {
+      width:100%; padding:14px 18px; border-radius:14px;
+      border:2px solid var(--glass-border); background:var(--bg-secondary);
+      color:var(--text); font-family:var(--font); font-size:14px;
+      margin-bottom:10px; transition:var(--transition);
+    }
+    .auth-input:focus { outline:none; border-color:var(--blue); box-shadow:0 0 0 4px rgba(37,99,235,0.1); }
+    .auth-btn {
+      width:100%; padding:16px; border-radius:16px; border:none;
+      background:var(--gradient-1); color:white; font-family:var(--font);
+      font-weight:700; font-size:15px; cursor:pointer; margin-top:8px;
+      transition:var(--transition); box-shadow:0 8px 25px rgba(37,99,235,0.3);
+    }
+    .auth-btn:hover { transform:translateY(-2px); }
+
+    .password-hint {
+      font-size:10px; color:var(--text-secondary);
+      text-align:left; margin-top:-6px; margin-bottom:10px;
+    }
+
+    /* Header */
+    .glass-header {
+      background:var(--header-bg); backdrop-filter:blur(20px);
+      border-radius:var(--radius); padding:14px 20px;
+      display:flex; justify-content:space-between; align-items:center;
+      margin-bottom:20px; border:1px solid var(--glass-border);
+      box-shadow:var(--glass-shadow); position:sticky; top:16px; z-index:100;
+    }
+    .header-left { display:flex; align-items:center; gap:10px; }
+    .logo-icon { font-size:32px; background:var(--gradient-1); -webkit-background-clip:text; -webkit-text-fill-color:transparent; animation:float 3s ease-in-out infinite; }
+    .header-left h1 { font-size:20px; font-weight:800; background:var(--gradient-2); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .header-right { display:flex; gap:8px; align-items:center; }
+    .user-avatar {
+      width:40px; height:40px; border-radius:50%; overflow:hidden;
+      cursor:pointer; transition:var(--transition); border:2px solid var(--blue);
+      display:flex; align-items:center; justify-content:center;
+      background:var(--bg-secondary);
+    }
+    .user-avatar img { width:100%; height:100%; object-fit:cover; }
+    .user-avatar .avatar-text { font-weight:700; font-size:16px; color:var(--blue); }
+    .icon-btn {
+      background:var(--card-bg); border:1px solid var(--glass-border);
+      border-radius:12px; width:38px; height:38px;
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer; color:var(--text); font-size:15px; transition:var(--transition);
+    }
+    .icon-btn:hover { background:var(--gradient-1); color:white; transform:scale(1.1); }
+
+    /* Page transition */
+    .page-section { animation:fadeIn 0.4s ease; }
+    .glass-card { background:var(--card-bg); backdrop-filter:blur(20px); border-radius:var(--radius); border:1px solid var(--glass-border); box-shadow:var(--glass-shadow); padding:24px; transition:var(--transition); }
+    .section-title { font-size:24px; font-weight:800; margin-bottom:4px; background:var(--gradient-1); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .section-subtitle { color:var(--text-secondary); font-size:13px; margin-bottom:18px; }
+
+    /* Category */
+    .category-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:8px; }
+    @media(max-width:600px){ .category-grid{grid-template-columns:repeat(2,1fr); gap:10px;} }
+    .category-card {
+      background:var(--card-bg); backdrop-filter:blur(15px);
+      border-radius:18px; border:2px solid var(--glass-border);
+      padding:22px 12px 18px; text-align:center; cursor:pointer;
+      transition:all 0.4s; min-height:140px; display:flex;
+      flex-direction:column; align-items:center; justify-content:center; gap:8px;
+    }
+    .category-card:hover { transform:translateY(-6px); border-color:var(--blue); box-shadow:0 16px 40px rgba(37,99,235,0.2); }
+    .category-icon-wrap { width:52px; height:52px; border-radius:16px; display:flex; align-items:center; justify-content:center; font-size:26px; }
+    .category-card .card-title { font-size:14px; font-weight:700; }
+    .category-card .card-desc { font-size:10px; color:var(--text-secondary); line-height:1.3; }
+
+    .wa-icon-svg { width:28px; height:28px; }
+
+    .ic-1{background:linear-gradient(135deg,#dbeafe,#ede9fe);color:#2563EB;}
+    .ic-2{background:linear-gradient(135deg,#cffafe,#dbeafe);color:#06B6D4;}
+    .ic-3{background:linear-gradient(135deg,#dcfce7,#d1fae5);color:#10B981;}
+    .ic-4{background:linear-gradient(135deg,#ffe4e6,#fce7f3);color:#EC4899;}
+    .ic-5{background:linear-gradient(135deg,#fff7ed,#ffedd5);color:#F97316;}
+    .dark-mode .ic-1,.dark-mode .ic-2,.dark-mode .ic-3,.dark-mode .ic-4,.dark-mode .ic-5{background:rgba(255,255,255,0.1);}
+
+    /* Generator Layout */
+    .generator-layout { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:20px; }
+    @media(max-width:768px){ .generator-layout{grid-template-columns:1fr;} }
+    .form-group { margin-bottom:12px; }
+    .form-group label { display:block; font-size:12px; font-weight:600; margin-bottom:5px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px; }
+    .form-group input,.form-group textarea,.form-group select {
+      width:100%; padding:12px 16px; border-radius:12px;
+      border:2px solid var(--glass-border); background:var(--bg-secondary);
+      color:var(--text); font-family:var(--font); font-size:13px;
+      transition:var(--transition); resize:vertical;
+    }
+    .form-group input:focus,.form-group textarea:focus,.form-group select:focus { outline:none; border-color:var(--blue); box-shadow:0 0 0 3px rgba(37,99,235,0.1); }
+
+    /* Color Palette */
+    .color-palette { display:flex; flex-wrap:wrap; gap:8px; margin-top:4px; }
+    .color-dot {
+      width:34px; height:34px; border-radius:50%; cursor:pointer;
+      border:3px solid transparent; transition:var(--transition);
+      box-shadow:0 2px 8px rgba(0,0,0,0.1);
+    }
+    .color-dot:hover { transform:scale(1.15); }
+    .color-dot.active { border-color:var(--text); box-shadow:0 0 0 5px rgba(37,99,235,0.3); }
+
+    /* Shape Grid */
+    .shape-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px; }
+    .shape-option {
+      padding:14px 12px; border-radius:12px;
+      border:2px solid var(--glass-border); background:var(--card-bg);
+      cursor:pointer; text-align:center; font-size:13px; font-weight:600;
+      transition:var(--transition); color:var(--text);
+    }
+    .shape-option:hover,.shape-option.active { border-color:var(--blue); background:var(--gradient-1); color:white; }
+    .shape-option .shape-icon { font-size:28px; display:block; margin-bottom:4px; }
+
+    /* Buttons */
+    .btn-primary {
+      background:var(--gradient-1); color:white; border:none;
+      padding:15px 24px; border-radius:14px; font-weight:700;
+      cursor:pointer; font-size:14px; transition:var(--transition);
+      width:100%; display:flex; align-items:center; justify-content:center;
+      gap:8px; box-shadow:0 6px 20px rgba(37,99,235,0.3);
+    }
+    .btn-primary:hover { transform:translateY(-2px); box-shadow:0 10px 30px rgba(37,99,235,0.4); }
+    .btn-secondary {
+      background:var(--card-bg); color:var(--text);
+      border:2px solid var(--glass-border); padding:10px 16px;
+      border-radius:12px; font-weight:600; cursor:pointer;
+      font-size:12px; transition:var(--transition);
+      display:inline-flex; align-items:center; gap:6px;
+    }
+    .btn-wa {
+      background:#25D366; color:white; border:none;
+      padding:12px 20px; border-radius:30px; font-weight:700;
+      cursor:pointer; font-size:13px; transition:var(--transition);
+      display:inline-flex; align-items:center; gap:8px;
+      text-decoration:none; width:100%; justify-content:center;
+      box-shadow:0 4px 15px rgba(37,211,102,0.3);
+    }
+    .btn-wa:hover { transform:translateY(-2px); box-shadow:0 8px 25px rgba(37,211,102,0.45); }
+    .btn-danger { background:#ef4444; color:white; border:none; padding:14px 24px; border-radius:14px; font-weight:700; cursor:pointer; width:100%; }
+
+    /* Preview */
+    .preview-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+    .preview-header h3 { font-size:16px; font-weight:700; }
+    .preview-actions { display:flex; gap:6px; }
+    .qr-preview { display:flex; align-items:center; justify-content:center; min-height:280px; position:relative; background:#ffffff; border-radius:18px; padding:24px; }
+    .qr-container { display:flex; align-items:center; justify-content:center; width:100%; }
+    .qr-container canvas,.qr-container img { max-width:100%; height:auto; }
+    .placeholder-text { color:#94a3b8; font-size:13px; font-weight:500; }
+    .qr-loading { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.3); border-radius:18px; z-index:10; }
+    .spinner { width:40px; height:40px; border:3px solid rgba(255,255,255,0.3); border-top-color:white; border-radius:50%; animation:spin 0.8s linear infinite; }
+
+    /* Download */
+    .download-label { font-size:12px; font-weight:700; color:var(--text-secondary); margin-top:14px; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px; }
+    .download-options { display:flex; gap:6px; flex-wrap:wrap; }
+    .btn-download {
+      flex:1; min-width:55px; padding:12px 6px; border-radius:10px;
+      border:2px solid var(--glass-border); background:var(--card-bg);
+      color:var(--text); font-size:11px; font-weight:700; cursor:pointer;
+      transition:var(--transition); text-align:center; text-transform:uppercase;
+    }
+    .btn-download:hover { background:var(--gradient-1); color:white; border-color:transparent; }
+
+    /* Customization */
+    .customization-panel { margin:18px 0; padding-top:14px; border-top:2px solid var(--glass-border); }
+    .customization-panel h3 { font-size:15px; margin-bottom:12px; font-weight:700; display:flex; align-items:center; gap:8px; }
+    .custom-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .custom-item { display:flex; flex-direction:column; gap:4px; margin-bottom:14px; }
+    .custom-item label { font-size:11px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px; }
+    .custom-item select { padding:10px; border-radius:10px; border:2px solid var(--glass-border); background:var(--bg-secondary); color:var(--text); font-family:var(--font); }
+
+    /* Bottom Nav */
+    .bottom-nav-wrapper {
+      position:fixed; bottom:16px; left:50%; transform:translateX(-50%);
+      z-index:100;
+    }
+    .bottom-nav {
+      background:var(--nav-bg); backdrop-filter:blur(20px);
+      border-radius:28px; display:flex; padding:6px; gap:4px;
+      border:2px solid var(--glass-border); box-shadow:0 8px 40px rgba(0,0,0,0.15);
+      position:relative;
+    }
+    .nav-indicator {
+      position:absolute; top:6px; height:calc(100% - 12px);
+      background:var(--gradient-1); border-radius:22px;
+      transition:all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index:0; box-shadow:0 4px 15px rgba(37,99,235,0.3);
+    }
+    .nav-item {
+      background:transparent; border:none; color:var(--text-secondary);
+      padding:12px 20px; border-radius:22px; cursor:pointer;
+      font-family:var(--font); font-weight:600; font-size:13px;
+      transition:color 0.3s; display:flex; flex-direction:column;
+      align-items:center; gap:3px; z-index:1; position:relative;
+      min-width:65px; white-space:nowrap;
+    }
+    .nav-item i { font-size:18px; }
+    .nav-item.active { color:white; }
+
+    .back-btn { background:transparent; border:none; color:var(--text); font-family:var(--font); font-weight:700; cursor:pointer; display:flex; align-items:center; gap:10px; margin-bottom:16px; padding:10px 0; font-size:15px; }
+    .hidden { display:none !important; }
+
+    /* Scanner */
+    .scanner-placeholder {
+      position:absolute; inset:0; display:flex;
+      flex-direction:column; align-items:center; justify-content:center;
+      color:var(--text-secondary); text-align:center; padding:20px;
+    }
+    .scanner-placeholder i { font-size:50px; margin-bottom:12px; opacity:0.5; }
+    .scanner-placeholder p { font-size:13px; font-weight:500; }
+    .scanner-container { width:100%; max-width:400px; margin:0 auto; aspect-ratio:1; overflow:hidden; display:flex; align-items:center; justify-content:center; margin-bottom:16px; position:relative; }
+    .scanner-container video { width:100%; height:100%; object-fit:cover; border-radius:18px; }
+    .scanner-result { padding:18px; background:var(--bg-secondary); border-radius:14px; margin-top:12px; text-align:center; word-break:break-all; border:2px solid var(--glass-border); }
+    .scanner-actions { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:14px; }
+
+    /* History */
+    .history-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:12px; margin-top:16px; }
+    .history-item { background:var(--card-bg); border-radius:16px; padding:12px; text-align:center; cursor:pointer; border:2px solid var(--glass-border); transition:var(--transition); }
+    .history-item:hover { border-color:var(--blue); transform:translateY(-4px); }
+    .history-item canvas { width:100%; height:auto; border-radius:8px; }
+    .empty-state { 
+      text-align:center; color:var(--text-secondary); 
+      padding:60px 20px; grid-column:1/-1;
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+    }
+    .empty-state i { font-size:55px; margin-bottom:16px; opacity:0.4; display:block; }
+    .empty-state p { font-size:15px; font-weight:500; }
+
+    /* Profile */
+    .profile-avatar-large {
+      width:90px; height:90px; border-radius:50%; overflow:hidden;
+      margin:0 auto 16px; border:3px solid var(--blue);
+      display:flex; align-items:center; justify-content:center;
+      background:var(--bg-secondary); cursor:pointer; position:relative;
+      box-shadow:0 8px 30px rgba(37,99,235,0.3);
+    }
+    .profile-avatar-large img { width:100%; height:100%; object-fit:cover; }
+    .profile-avatar-large .avatar-placeholder { font-size:36px; font-weight:800; color:var(--blue); }
+    .profile-avatar-large .upload-overlay {
+      position:absolute; bottom:0; left:0; right:0;
+      background:rgba(0,0,0,0.5); color:white; font-size:10px;
+      padding:4px; text-align:center; opacity:0; transition:opacity 0.3s;
+    }
+    .profile-avatar-large:hover .upload-overlay { opacity:1; }
+    .profile-info { text-align:center; margin-bottom:24px; }
+    .profile-info h3 { font-size:22px; font-weight:700; }
+    .profile-info p { font-size:13px; color:var(--text-secondary); }
+    .profile-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:24px; }
+    .profile-stat { background:var(--bg-secondary); border-radius:14px; padding:14px; text-align:center; }
+    .profile-stat .stat-num { font-size:22px; font-weight:800; background:var(--gradient-1); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .profile-stat .stat-label { font-size:10px; color:var(--text-secondary); font-weight:500; }
+    .profile-menu { display:flex; flex-direction:column; gap:8px; }
+    .profile-menu-item {
+      display:flex; align-items:center; gap:12px;
+      padding:14px 18px; border-radius:14px;
+      background:var(--bg-secondary); border:none;
+      color:var(--text); font-family:var(--font);
+      font-weight:600; font-size:14px; cursor:pointer;
+      transition:var(--transition); width:100%; text-align:left;
+    }
+    .profile-menu-item:hover { background:var(--card-bg); transform:translateX(4px); }
+    .profile-menu-item i { width:24px; text-align:center; }
+    .profile-menu-item.danger { color:#ef4444; }
+
+    /* Modal */
+    .modal-overlay {
+      position:fixed; top:0; left:0; width:100%; height:100%;
+      background:rgba(0,0,0,0.6); z-index:1000;
+      display:flex; align-items:center; justify-content:center;
+      backdrop-filter:blur(4px); animation:fadeIn 0.3s ease;
+    }
+    .modal {
+      background:var(--card-bg); backdrop-filter:blur(20px);
+      border-radius:24px; border:2px solid var(--glass-border);
+      padding:28px; width:90%; max-width:500px; max-height:80vh;
+      overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.3);
+      animation:fadeInUp 0.4s ease;
+    }
+    .modal h3 { font-size:20px; font-weight:700; margin-bottom:14px; text-align:center; }
+    .modal p { font-size:13px; color:var(--text-secondary); line-height:1.7; margin-bottom:10px; }
+    .modal ul { margin:10px 0; padding-left:20px; }
+    .modal ul li { font-size:13px; color:var(--text-secondary); line-height:1.7; margin-bottom:6px; }
+    .modal-buttons { display:flex; gap:10px; margin-top:20px; }
+    .modal-buttons button { flex:1; padding:12px; border-radius:12px; font-weight:700; cursor:pointer; font-family:var(--font); font-size:14px; border:none; transition:var(--transition); }
+    .btn-cancel { background:var(--bg-secondary); color:var(--text); }
+    .btn-confirm { background:#ef4444; color:white; }
+
+    /* Toast */
+    .toast-container { position:fixed; top:20px; right:20px; z-index:9999; display:flex; flex-direction:column; gap:10px; max-width:350px; }
+    .toast {
+      background:var(--card-bg); backdrop-filter:blur(20px);
+      border:2px solid var(--glass-border); border-radius:14px;
+      padding:14px 22px; font-size:14px; font-weight:600;
+      animation:slideIn 0.3s ease; box-shadow:0 8px 30px rgba(0,0,0,0.15);
+      color:var(--text);
+    }
+    .toast.success { border-left:5px solid #10b981; }
+    .toast.error { border-left:5px solid #ef4444; }
+    .toast.info { border-left:5px solid var(--blue); }
+    @keyframes slideIn { from{transform:translateX(100%);opacity:0;} to{transform:translateX(0);opacity:1;} }
+
+    .wa-buttons { display:flex; flex-direction:column; gap:10px; margin-top:8px; }
+  </style>
+</head>
+<body class="light-mode">
+  <div id="app">
+    <!-- Splash -->
+    <div id="splash-screen" class="splash-screen">
+      <div class="splash-logo"><i class="fas fa-qrcode"></i><h1>QR Code Generator</h1><p>Membuat dan Menghasilkan QR Code</p></div>
+      <div class="splash-loader"></div>
+    </div>
+
+    <!-- Auth Page -->
+    <section id="authPage" class="auth-page hidden">
+      <div class="auth-card">
+        <i class="fas fa-qrcode auth-logo"></i>
+        <h2 class="auth-title">QR Code Generator</h2>
+        <p class="auth-subtitle">Masuk atau daftar untuk melanjutkan</p>
+        <div class="auth-tabs">
+          <button class="auth-tab active" data-tab="login">Masuk</button>
+          <button class="auth-tab" data-tab="register">Daftar</button>
+        </div>
+        <form id="authForm">
+          <input type="text" id="authUsername" class="auth-input" placeholder="Username" required minlength="3">
+          <div id="registerFields" class="hidden">
+            <input type="email" id="authEmail" class="auth-input" placeholder="Email (contoh@gmail.com)" required>
+          </div>
+          <input type="password" id="authPassword" class="auth-input" placeholder="Password" required minlength="8">
+          <p class="password-hint">Minimal 8 karakter, termasuk huruf, angka & simbol</p>
+          <div id="registerFields2" class="hidden">
+            <input type="password" id="authConfirmPassword" class="auth-input" placeholder="Konfirmasi Password" minlength="8">
+          </div>
+          <button type="submit" class="auth-btn" id="authSubmitBtn"><i class="fas fa-sign-in-alt"></i> Masuk</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- Main App -->
+    <div id="mainApp" class="hidden">
+      <header class="glass-header">
+        <div class="header-left"><i class="fas fa-qrcode logo-icon"></i><h1>QR Code Generator</h1></div>
+        <div class="header-right">
+          <button id="themeToggle" class="icon-btn"><i class="fas fa-moon"></i></button>
+          <div class="user-avatar" id="userAvatar" title="Profil">
+            <span class="avatar-text" id="avatarInitial">U</span>
+          </div>
+        </div>
+      </header>
+
+      <main class="main-content">
+        <!-- Dashboard -->
+        <section id="dashboard" class="dashboard-section page-section">
+          <h2 class="section-title">Buat QR Code Artistik</h2>
+          <p class="section-subtitle">Pilih jenis data & kreasikan dengan bentuk unik</p>
+          <div class="category-grid" id="categoryGrid"></div>
+        </section>
+
+        <!-- Generator -->
+        <section id="generator" class="generator-section page-section hidden">
+          <button id="backToDashboard" class="back-btn"><i class="fas fa-arrow-left"></i> Kembali</button>
+          <h2 id="generatorTitle" class="section-title">Generate QR</h2>
+          <div class="generator-layout">
+            <div class="glass-card form-card">
+              <form id="qrForm"></form>
+              <div class="customization-panel">
+                <h3><i class="fas fa-paint-brush"></i> Kustomisasi</h3>
+                
+                <div class="custom-item">
+                  <label>🔷 Bentuk QR</label>
+                  <div class="shape-grid" id="shapeGrid">
+                    <div class="shape-option active" data-shape="square"><span class="shape-icon">🟫</span>Kotak</div>
+                    <div class="shape-option" data-shape="rounded-square"><span class="shape-icon">🔲</span>Rounded</div>
+                  </div>
+                </div>
+
+                <div class="custom-item">
+                  <label>🎨 Warna QR</label>
+                  <div class="color-palette" id="qrColorPalette"></div>
+                  <input type="color" id="qrColorCustom" value="#000000" style="margin-top:8px; width:100%; height:38px; border-radius:10px; border:2px solid var(--glass-border); cursor:pointer;">
+                </div>
+
+                <div class="custom-item">
+                  <label>🖼️ Warna Background</label>
+                  <div class="color-palette" id="bgColorPalette"></div>
+                  <input type="color" id="qrBgColorCustom" value="#ffffff" style="margin-top:8px; width:100%; height:38px; border-radius:10px; border:2px solid var(--glass-border); cursor:pointer;">
+                </div>
+
+                <div class="custom-grid">
+                  <div class="custom-item">
+                    <label>📐 Ukuran</label>
+                    <select id="qrSize">
+                      <option value="256">256px</option>
+                      <option value="512" selected>512px</option>
+                      <option value="1024">1024px</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="custom-item" style="margin-top:12px;">
+                  <label>🖼️ Logo Tengah</label>
+                  <div style="display:flex; gap:8px;">
+                    <input type="file" id="logoUpload" accept="image/*" hidden>
+                    <button type="button" id="logoBtn" class="btn-secondary"><i class="fas fa-upload"></i> Upload Logo</button>
+                    <button type="button" id="removeLogoBtn" class="btn-secondary hidden"><i class="fas fa-times"></i> Hapus</button>
+                  </div>
+                </div>
+              </div>
+              <button type="button" id="generateBtn" class="btn-primary"><i class="fas fa-magic"></i> Generate QR Artistik</button>
+            </div>
+
+            <div class="glass-card preview-card">
+              <div class="preview-header">
+                <h3>Live Preview</h3>
+                <div class="preview-actions">
+                  <button id="copyQrBtn" class="icon-btn" title="Copy"><i class="fas fa-copy"></i></button>
+                  <button id="shareQrBtn" class="icon-btn" title="Share"><i class="fas fa-share-alt"></i></button>
+                </div>
+              </div>
+              <div id="qrPreview" class="qr-preview">
+                <div id="qrLoading" class="qr-loading hidden"><div class="spinner"></div></div>
+                <div id="qrContainer" class="qr-container"><p class="placeholder-text">QR Code akan muncul di sini</p></div>
+              </div>
+              <div id="downloadSection" style="display:none;">
+                <p class="download-label">📥 Download QR Code:</p>
+                <div class="download-options" id="downloadOptions">
+                  <button class="btn-download" data-format="png">PNG</button>
+                  <button class="btn-download" data-format="jpg">JPG</button>
+                  <button class="btn-download" data-format="svg">SVG</button>
+                  <button class="btn-download" data-format="pdf">PDF</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- History -->
+        <section id="history" class="history-section page-section hidden">
+          <button id="backFromHistory" class="back-btn"><i class="fas fa-arrow-left"></i> Kembali</button>
+          <h2 class="section-title">📚 Riwayat</h2>
+          <div id="historyList" class="history-grid">
+            <div class="empty-state">
+              <i class="fas fa-history"></i>
+              <p>Belum ada riwayat QR Code</p>
+            </div>
+          </div>
+          <button id="clearHistoryBtn" class="btn-danger hidden" style="margin-top:16px;"><i class="fas fa-trash"></i> Hapus Semua</button>
+        </section>
+
+        <!-- Scanner -->
+        <section id="scanner" class="scanner-section page-section hidden">
+          <button id="backFromScanner" class="back-btn"><i class="fas fa-arrow-left"></i> Kembali</button>
+          <h2 class="section-title">📷 Scan QR</h2>
+          <p class="section-subtitle">Arahkan kamera atau pilih gambar</p>
+          <div class="scanner-container glass-card">
+            <video id="scannerVideo" autoplay playsinline style="display:none;"></video>
+            <div class="scanner-placeholder" id="scannerPlaceholder">
+              <i class="fas fa-qrcode"></i>
+              <p>Arahkan kamera ke QR Code</p>
+              <p style="font-size:11px;">atau pilih gambar dari galeri</p>
+            </div>
+          </div>
+          <div id="scannerResult" class="scanner-result hidden">
+            <p id="scanResultText" style="margin-bottom:10px;font-size:13px;"></p>
+            <button id="copyScanResult" class="btn-secondary"><i class="fas fa-copy"></i> Salin</button>
+          </div>
+          <div class="scanner-actions">
+            <button id="startScanBtn" class="btn-primary" style="width:auto;"><i class="fas fa-camera"></i> Scan Kamera</button>
+            <button id="scanFromFileBtn" class="btn-secondary"><i class="fas fa-image"></i> Dari Gambar</button>
+            <input type="file" id="scanFileInput" accept="image/*" hidden>
+          </div>
+        </section>
+
+        <!-- Profile -->
+        <section id="profile" class="profile-section page-section hidden">
+          <button id="backFromProfile" class="back-btn"><i class="fas fa-arrow-left"></i> Kembali</button>
+          <div class="glass-card" style="text-align:center;">
+            <div class="profile-avatar-large" id="profileAvatarLarge" title="Klik untuk ganti foto">
+              <span class="avatar-placeholder" id="profileAvatarPlaceholder">U</span>
+              <div class="upload-overlay">Ganti Foto</div>
+            </div>
+            <input type="file" id="profilePhotoUpload" accept="image/*" hidden>
+            <div class="profile-info">
+              <h3 id="profileName">Username</h3>
+              <p id="profileEmail">email@contoh.com</p>
+              <p id="profileMemberSince">Bergabung sejak: -</p>
+            </div>
+            <div class="profile-stats">
+              <div class="profile-stat"><div class="stat-num" id="profileTotalQR">0</div><div class="stat-label">Total QR</div></div>
+              <div class="profile-stat"><div class="stat-num" id="profileTodayQR">0</div><div class="stat-label">Hari Ini</div></div>
+              <div class="profile-stat"><div class="stat-num" id="profileTypes">0</div><div class="stat-label">Jenis</div></div>
+            </div>
+            <div class="profile-menu">
+              <button class="profile-menu-item" onclick="showModal('tutorial')"><i class="fas fa-book-open"></i> Panduan Penggunaan</button>
+              <button class="profile-menu-item" onclick="showModal('about')"><i class="fas fa-info-circle"></i> Tentang Aplikasi</button>
+              <button class="profile-menu-item" onclick="showModal('contact')"><i class="fas fa-headset"></i> Hubungi Admin</button>
+              <button class="profile-menu-item" onclick="showModal('privacy')"><i class="fas fa-shield-alt"></i> Kebijakan Privasi</button>
+              <button class="profile-menu-item danger" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Keluar</button>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <div class="bottom-nav-wrapper">
+        <nav class="bottom-nav" id="bottomNav">
+          <div class="nav-indicator" id="navIndicator"></div>
+          <button class="nav-item active" data-view="dashboard"><i class="fas fa-th-large"></i><span>Buat</span></button>
+          <button class="nav-item" data-view="history"><i class="fas fa-history"></i><span>Riwayat</span></button>
+          <button class="nav-item" data-view="scanner"><i class="fas fa-qrcode"></i><span>Scan</span></button>
+          <button class="nav-item" data-view="profile"><i class="fas fa-user"></i><span>Profil</span></button>
+        </nav>
+      </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="modalOverlay" class="modal-overlay hidden">
+      <div class="modal" id="modalContent"></div>
+    </div>
+
+    <div id="toastContainer" class="toast-container"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  
+  <script>
+    // ========== CONSTANTS ==========
+    const USERS_KEY='qrstudio_users',SESSION_KEY='qrstudio_session',HISTORY_KEY='qrstudio_history',PROFILE_PHOTO_KEY='qrstudio_profile_photo';
+    const COLORS=['#000000','#2563EB','#7C3AED','#EC4899','#EF4444','#F97316','#EAB308','#22C55E','#06B6D4','#8B5CF6','#6366F1','#14B8A6','#0EA5E9','#D946EF','#F43F5E','#64748B','#1E293B'];
+    
+    // WhatsApp SVG Icon
+    const waSVG = `<svg class="wa-icon-svg" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>`;
+
+    const categories = [
+      { id:'url', icon:'fa-link', label:'Link / URL', desc:'Website & tautan', ic:'ic-1' },
+      { id:'text', icon:'fa-align-left', label:'Teks', desc:'Catatan & pesan', ic:'ic-2' },
+      { id:'whatsapp', icon:'wa-svg', label:'WhatsApp', desc:'Chat langsung', ic:'ic-3', isWA:true },
+      { id:'email', icon:'fa-envelope', label:'Email', desc:'Kirim email', ic:'ic-4' },
+      { id:'sms', icon:'fa-comment-sms', label:'SMS', desc:'Pesan singkat', ic:'ic-5' },
+      { id:'phone', icon:'fa-phone', label:'Telepon', desc:'Panggilan', ic:'ic-1' },
+      { id:'wifi', icon:'fa-wifi', label:'WiFi', desc:'Akses internet', ic:'ic-2' },
+      { id:'location', icon:'fa-location-dot', label:'Lokasi', desc:'Titik koordinat', ic:'ic-3' },
+      { id:'contact', icon:'fa-id-card', label:'Kontak', desc:'Kartu nama', ic:'ic-4' },
+    ];
+
+    // ========== UTILS ==========
+    function getUsers(){return JSON.parse(localStorage.getItem(USERS_KEY)||'{}');}
+    function saveUsers(u){localStorage.setItem(USERS_KEY,JSON.stringify(u));}
+    function getSession(){return JSON.parse(localStorage.getItem(SESSION_KEY)||'null');}
+    function saveSession(u){localStorage.setItem(SESSION_KEY,JSON.stringify(u));}
+    function clearSession(){localStorage.removeItem(SESSION_KEY);}
+    function hashPassword(p){let h=0;for(let i=0;i<p.length;i++){h=((h<<5)-h)+p.charCodeAt(i);h=h&h;}return'h_'+Math.abs(h).toString(36);}
+    function getHistory(){return JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]');}
+
+    function validatePassword(p){
+      if(p.length<8)return'Password minimal 8 karakter';
+      if(!/[A-Za-z]/.test(p))return'Password harus mengandung huruf';
+      if(!/[0-9]/.test(p))return'Password harus mengandung angka';
+      return null;
+    }
+
+    function registerUser(u,email,p){
+      const users=getUsers();
+      if(users[u]){showToast('Username sudah terdaftar!','error');return false;}
+      const emailExists=Object.values(users).some(user=>user.email===email);
+      if(emailExists){showToast('Email sudah terdaftar!','error');return false;}
+      const pwError=validatePassword(p);
+      if(pwError){showToast(pwError,'error');return false;}
+      users[u]={password:hashPassword(p),email:email,createdAt:new Date().toISOString(),totalQR:0};
+      saveUsers(users);showToast('Registrasi berhasil! Silakan login.','success');return true;
+    }
+
+    function loginUser(u,p){
+      const users=getUsers(),user=users[u];
+      if(!user){showToast('Username tidak ditemukan!','error');return false;}
+      if(user.password!==hashPassword(p)){showToast('Password salah!','error');return false;}
+      saveSession({username:u});showToast('Login berhasil! Selamat datang, '+u+'!','success');return true;
+    }
+
+    function getCurrentUser(){
+      const session=getSession();if(!session)return null;
+      const users=getUsers(),user=users[session.username];
+      if(!user){clearSession();return null;}return{username:session.username,...user};
+    }
+
+    function renderColorPalette(containerId,inputId,defaultColor){
+      const container=document.getElementById(containerId);
+      container.innerHTML=COLORS.map(c=>`<span class="color-dot${c===defaultColor?' active':''}" data-color="${c}" style="background:${c};"></span>`).join('');
+      container.querySelectorAll('.color-dot').forEach(dot=>{
+        dot.addEventListener('click',()=>{
+          container.querySelectorAll('.color-dot').forEach(d=>d.classList.remove('active'));
+          dot.classList.add('active');
+          document.getElementById(inputId).value=dot.dataset.color;
+        });
+      });
+      document.getElementById(inputId).addEventListener('input',function(){
+        container.querySelectorAll('.color-dot').forEach(d=>d.classList.remove('active'));
+      });
+    }
+
+    // ========== MODAL ==========
+    const modalData={
+      tutorial:{title:'📖 Panduan Penggunaan',content:`
+        <p><b>QR Code Generator</b> adalah aplikasi untuk membuat QR Code dengan berbagai bentuk artistik.</p>
+        <p><b>Langkah-langkah:</b></p><ul>
+        <li><b>1. Pilih Kategori:</b> URL, Teks, WhatsApp, Email, SMS, dll.</li>
+        <li><b>2. Isi Data:</b> Masukkan informasi sesuai kategori.</li>
+        <li><b>3. Kustomisasi:</b> Pilih bentuk (Kotak/Rounded), warna, ukuran, dan logo.</li>
+        <li><b>4. Generate:</b> Klik tombol Generate untuk membuat QR.</li>
+        <li><b>5. Download:</b> Unduh dalam format PNG, JPG, SVG, atau PDF.</li>
+        <li><b>6. Scan:</b> Gunakan kamera atau gambar untuk membaca QR.</li></ul>`},
+      about:{title:'ℹ️ Tentang',content:`<p><b>QR Studio Art v1.0</b></p><p>Generator QR Code dengan bentuk artistik dan kustomisasi lengkap.</p><ul><li>✅ 9 jenis QR</li><li>✅ 17+ pilihan warna</li><li>✅ Upload logo</li><li>✅ Download multi format</li><li>✅ Scanner bawaan</li><li>✅ Dark/Light mode</li></ul>`},
+      contact:{title:'📞 Hubungi Admin',content:`<p>Hubungi admin melalui WhatsApp:</p><div class="wa-buttons"><a href="https://wa.me/6285199505648" target="_blank" class="btn-wa">${waSVG} Chat CS WhatsApp </a></div>`},
+      privacy:{title:'🔒 Privasi',content:`<p>Data disimpan lokal di perangkat Anda. Tidak ada data yang dikirim ke server.</p><ul><li>Password dienkripsi</li><li>QR diproses di perangkat</li><li>Tidak ada tracking</li></ul>`},
+      logout:{title:'⚠️ Konfirmasi Keluar',content:`<p>Yakin ingin keluar dari <b id="logoutUsername"></b>?</p><div class="modal-buttons"><button class="btn-cancel" onclick="closeModal()">Batal</button><button class="btn-confirm" id="confirmLogoutBtn">Ya, Keluar</button></div>`}
+    };
+
+    function showModal(type){
+      const data=modalData[type];if(!data)return;
+      document.getElementById('modalContent').innerHTML=`<h3>${data.title}</h3>${data.content}${type!=='logout'?'<button class="btn-cancel" style="width:100%;margin-top:16px;padding:12px;border-radius:12px;border:none;background:var(--bg-secondary);color:var(--text);font-weight:700;cursor:pointer;font-family:var(--font);" onclick="closeModal()">Tutup</button>':''}`;
+      document.getElementById('modalOverlay').classList.remove('hidden');
+      if(type==='logout'){
+        document.getElementById('logoutUsername').textContent=getCurrentUser()?.username||'';
+        document.getElementById('confirmLogoutBtn').onclick=()=>{clearSession();closeModal();showToast('Anda telah logout.','info');setTimeout(()=>location.reload(),500);};
+      }
+    }
+    function closeModal(){document.getElementById('modalOverlay').classList.add('hidden');}
+    document.getElementById('modalOverlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
+
+    function showToast(message,type='info'){
+      const container=document.getElementById('toastContainer'),toast=document.createElement('div');
+      toast.className=`toast ${type}`;toast.textContent=message;container.appendChild(toast);
+      setTimeout(()=>{toast.style.opacity='0';toast.style.transform='translateX(100%)';setTimeout(()=>toast.remove(),300);},3500);
+    }
+
+    // ========== INIT ==========
+    document.addEventListener('DOMContentLoaded',()=>{
+      setTimeout(()=>{document.getElementById('splash-screen').classList.add('hidden');checkAuth();},1800);
+      initTheme();
+      renderColorPalette('qrColorPalette','qrColorCustom','#000000');
+      renderColorPalette('bgColorPalette','qrBgColorCustom','#ffffff');
+    });
+
+    function checkAuth(){
+      const session=getSession(),authPage=document.getElementById('authPage'),mainApp=document.getElementById('mainApp');
+      if(session&&getCurrentUser()){authPage.classList.add('hidden');mainApp.classList.remove('hidden');initMainApp();}
+      else{authPage.classList.remove('hidden');mainApp.classList.add('hidden');initAuthPage();}
+    }
+
+    function initTheme(){
+      const btn=document.getElementById('themeToggle');if(!btn)return;
+      const saved=localStorage.getItem('qrstudio_theme')||'light';
+      document.body.className=saved+'-mode';btn.querySelector('i').className=saved==='light'?'fas fa-moon':'fas fa-sun';
+      btn.addEventListener('click',()=>{
+        const cur=document.body.classList.contains('light-mode')?'light':'dark',next=cur==='light'?'dark':'light';
+        document.body.className=next+'-mode';localStorage.setItem('qrstudio_theme',next);
+        btn.querySelector('i').className=next==='light'?'fas fa-moon':'fas fa-sun';
+      });
+    }
+
+    function initAuthPage(){
+      const tabs=document.querySelectorAll('.auth-tab'),form=document.getElementById('authForm'),
+            regFields=document.getElementById('registerFields'),regFields2=document.getElementById('registerFields2'),
+            submitBtn=document.getElementById('authSubmitBtn');
+      let tab='login';
+      
+      tabs.forEach(t=>{t.addEventListener('click',()=>{
+        tabs.forEach(x=>x.classList.remove('active'));t.classList.add('active');tab=t.dataset.tab;
+        if(tab==='register'){
+          regFields.classList.remove('hidden');regFields2.classList.remove('hidden');
+          submitBtn.innerHTML='<i class="fas fa-user-plus"></i> Daftar';
+        }else{
+          regFields.classList.add('hidden');regFields2.classList.add('hidden');
+          submitBtn.innerHTML='<i class="fas fa-sign-in-alt"></i> Masuk';
+        }
+      })});
+      
+      form.addEventListener('submit',e=>{e.preventDefault();
+        const u=document.getElementById('authUsername').value.trim(),
+              p=document.getElementById('authPassword').value;
+        if(!u||!p){showToast('Isi semua field!','error');return;}
+        if(u.length<3){showToast('Username minimal 3 karakter!','error');return;}
+        
+        if(tab==='register'){
+          const email=document.getElementById('authEmail').value.trim();
+          if(!email){showToast('Email wajib diisi!','error');return;}
+          if(!email.includes('@')||!email.includes('.')){showToast('Format email tidak valid!','error');return;}
+          const cp=document.getElementById('authConfirmPassword').value;
+          if(p!==cp){showToast('Password tidak cocok!','error');return;}
+          const pwError=validatePassword(p);
+          if(pwError){showToast(pwError,'error');return;}
+          if(registerUser(u,email,p)){tabs[0].click();document.getElementById('authUsername').value=u;}
+        }else{
+          const pwError=validatePassword(p);
+          if(pwError){showToast(pwError,'error');return;}
+          if(loginUser(u,p))checkAuth();
+        }
+      });
+    }
+
+    function initMainApp(){
+      const user=getCurrentUser();if(!user){checkAuth();return;}
+      updateAvatarUI();renderCategories();setupNavigation();updateProfilePage();
+    }
+
+    function updateAvatarUI(){
+      const user=getCurrentUser();if(!user)return;
+      const photoData=localStorage.getItem(PROFILE_PHOTO_KEY+'_'+user.username);
+      const headerAvatar=document.getElementById('userAvatar');
+      if(photoData){headerAvatar.innerHTML=`<img src="${photoData}" alt="Profile">`;}
+      else{headerAvatar.innerHTML=`<span class="avatar-text">${user.username[0].toUpperCase()}</span>`;}
+    }
+
+    function updateProfilePage(){
+      const user=getCurrentUser();if(!user)return;
+      const photoData=localStorage.getItem(PROFILE_PHOTO_KEY+'_'+user.username);
+      const profileAvatar=document.getElementById('profileAvatarLarge');
+      if(photoData){profileAvatar.innerHTML=`<img src="${photoData}" alt="Profile" style="width:100%;height:100%;object-fit:cover;"><div class="upload-overlay">Ganti Foto</div>`;}
+      else{profileAvatar.innerHTML=`<span class="avatar-placeholder">${user.username[0].toUpperCase()}</span><div class="upload-overlay">Ganti Foto</div>`;}
+      document.getElementById('profileName').textContent=user.username;
+      document.getElementById('profileEmail').textContent=user.email||'-';
+      document.getElementById('profileMemberSince').textContent='Bergabung: '+new Date(user.createdAt).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+      const history=getHistory().filter(h=>h.username===user.username),today=new Date().toDateString();
+      document.getElementById('profileTotalQR').textContent=history.length;
+      document.getElementById('profileTodayQR').textContent=history.filter(h=>new Date(h.date).toDateString()===today).length;
+      document.getElementById('profileTypes').textContent=new Set(history.map(h=>h.type)).size;
+    }
+
+    document.getElementById('profileAvatarLarge')?.addEventListener('click',()=>document.getElementById('profilePhotoUpload').click());
+    document.getElementById('profilePhotoUpload')?.addEventListener('change',function(e){
+      const file=e.target.files[0];if(!file)return;
+      const reader=new FileReader();reader.onload=ev=>{
+        const user=getCurrentUser();if(!user)return;
+        localStorage.setItem(PROFILE_PHOTO_KEY+'_'+user.username,ev.target.result);
+        updateAvatarUI();updateProfilePage();showToast('Foto profil diperbarui!','success');
+      };reader.readAsDataURL(file);
+    });
+
+    function renderCategories(){
+      const grid=document.getElementById('categoryGrid');
+      grid.innerHTML=categories.map(c=>`
+        <div class="category-card" data-type="${c.id}">
+          <div class="category-icon-wrap ${c.ic}">
+            ${c.isWA ? waSVG : `<i class="fas ${c.icon}"></i>`}
+          </div>
+          <span class="card-title">${c.label}</span><span class="card-desc">${c.desc}</span>
+        </div>`).join('');
+      grid.querySelectorAll('.category-card').forEach(c=>c.addEventListener('click',()=>switchPage('generator',c.dataset.type)));
+    }
+
+    function setupNavigation(){
+      const navItems=document.querySelectorAll('.nav-item'),indicator=document.getElementById('navIndicator');
+      function updateIndicator(activeItem){
+        const nav=document.getElementById('bottomNav'),navRect=nav.getBoundingClientRect(),itemRect=activeItem.getBoundingClientRect();
+        indicator.style.width=itemRect.width+'px';indicator.style.left=(itemRect.left-navRect.left)+'px';indicator.style.top='6px';
+      }
+      const initialActive=document.querySelector('.nav-item.active');
+      if(initialActive)setTimeout(()=>updateIndicator(initialActive),100);
+      window.addEventListener('resize',()=>{const a=document.querySelector('.nav-item.active');if(a)updateIndicator(a);});
+      
+      navItems.forEach(item=>{item.addEventListener('click',()=>{
+        navItems.forEach(n=>n.classList.remove('active'));item.classList.add('active');updateIndicator(item);
+        const view=item.dataset.view;
+        document.querySelectorAll('section').forEach(s=>s.classList.add('hidden'));
+        document.getElementById('generator').classList.add('hidden');
+        if(view==='dashboard')document.getElementById('dashboard').classList.remove('hidden');
+        else if(view==='history'){document.getElementById('history').classList.remove('hidden');loadHistory();}
+        else if(view==='scanner'){document.getElementById('scanner').classList.remove('hidden');initScanner();}
+        else if(view==='profile'){document.getElementById('profile').classList.remove('hidden');updateProfilePage();}
+      })});
+      
+      document.getElementById('backToDashboard').addEventListener('click',()=>switchPage('dashboard'));
+      document.getElementById('backFromHistory').addEventListener('click',()=>switchPage('dashboard'));
+      document.getElementById('backFromScanner').addEventListener('click',()=>{stopScanner();switchPage('dashboard');});
+      document.getElementById('backFromProfile').addEventListener('click',()=>switchPage('dashboard'));
+      document.getElementById('userAvatar').addEventListener('click',()=>switchPage('profile'));
+      document.getElementById('logoutBtn').addEventListener('click',()=>showModal('logout'));
+      document.querySelectorAll('.shape-option').forEach(o=>o.addEventListener('click',()=>{document.querySelectorAll('.shape-option').forEach(x=>x.classList.remove('active'));o.classList.add('active');}));
+    }
+
+    function switchPage(page,type){
+      document.querySelectorAll('section').forEach(s=>s.classList.add('hidden'));
+      document.getElementById('generator').classList.add('hidden');
+      const navItems=document.querySelectorAll('.nav-item'),indicator=document.getElementById('navIndicator');
+      if(page==='dashboard'){document.getElementById('dashboard').classList.remove('hidden');navItems.forEach(n=>n.classList.remove('active'));navItems[0].classList.add('active');}
+      else if(page==='generator'){document.getElementById('generator').classList.remove('hidden');if(type)showGenerator(type);}
+      else if(page==='history'){document.getElementById('history').classList.remove('hidden');loadHistory();navItems.forEach(n=>n.classList.remove('active'));navItems[1].classList.add('active');}
+      else if(page==='scanner'){document.getElementById('scanner').classList.remove('hidden');initScanner();navItems.forEach(n=>n.classList.remove('active'));navItems[2].classList.add('active');}
+      else if(page==='profile'){document.getElementById('profile').classList.remove('hidden');updateProfilePage();navItems.forEach(n=>n.classList.remove('active'));navItems[3].classList.add('active');}
+      const activeItem=document.querySelector('.nav-item.active');
+      if(activeItem&&indicator){const nav=document.getElementById('bottomNav'),nr=nav.getBoundingClientRect(),ir=activeItem.getBoundingClientRect();indicator.style.width=ir.width+'px';indicator.style.left=(ir.left-nr.left)+'px';indicator.style.top='6px';}
+    }
+
+    // ========== QR GENERATOR ==========
+    function showGenerator(type){
+      document.getElementById('generatorTitle').textContent='Buat QR '+categories.find(c=>c.id===type).label;
+      buildForm(type);
+      document.getElementById('qrContainer').innerHTML='<p class="placeholder-text">QR Code akan muncul di sini</p>';
+      document.getElementById('downloadSection').style.display='none';
+      window.currentQRType=type;
+    }
+
+    function buildForm(type){
+      let html='';
+      switch(type){
+        case'url':html=`<div class="form-group"><label>🔗 URL Website</label><input type="url" id="inputUrl" placeholder="https://contoh.com" required></div>`;break;
+        case'text':html=`<div class="form-group"><label>📝 Teks</label><textarea id="inputText" rows="4" placeholder="Masukkan teks..." required></textarea></div>`;break;
+        case'whatsapp':html=`<div class="form-group"><label>💬 Nomor WhatsApp</label><input type="tel" id="inputWa" placeholder="6281234567890" required></div><div class="form-group"><label>Pesan (opsional)</label><textarea id="inputWaMsg" rows="2" placeholder="Halo..."></textarea></div>`;break;
+        case'email':html=`<div class="form-group"><label>📧 Email</label><input type="email" id="inputEmail" placeholder="contoh@email.com" required></div><div class="form-group"><label>Subjek</label><input type="text" id="inputEmailSubject" placeholder="Subjek"></div><div class="form-group"><label>Pesan</label><textarea id="inputEmailBody" rows="2" placeholder="Isi pesan..."></textarea></div>`;break;
+        case'sms':html=`<div class="form-group"><label>📱 Nomor SMS</label><input type="tel" id="inputSmsNumber" placeholder="081234567890" required></div><div class="form-group"><label>Isi SMS</label><textarea id="inputSmsBody" rows="2" placeholder="Isi SMS..."></textarea></div>`;break;
+        case'phone':html=`<div class="form-group"><label>📞 Nomor Telepon</label><input type="tel" id="inputPhone" placeholder="081234567890" required></div>`;break;
+        case'wifi':html=`<div class="form-group"><label>📶 Nama WiFi</label><input type="text" id="inputWifiSsid" placeholder="Nama WiFi" required></div><div class="form-group"><label>Password</label><input type="text" id="inputWifiPass" placeholder="Password"></div><div class="form-group"><label>Enkripsi</label><select id="inputWifiEnc"><option value="WPA">WPA/WPA2</option><option value="WEP">WEP</option><option value="nopass">Tanpa Password</option></select></div>`;break;
+        case'location':html=`<div class="form-group"><label>📍 Latitude</label><input type="text" id="inputLat" placeholder="-6.2088" required></div><div class="form-group"><label>📍 Longitude</label><input type="text" id="inputLng" placeholder="106.8456" required></div>`;break;
+        case'contact':html=`<div class="form-group"><label>👤 Nama</label><input type="text" id="inputVcardName" placeholder="Nama" required></div><div class="form-group"><label>📱 Telepon</label><input type="tel" id="inputVcardPhone" placeholder="081234567890"></div><div class="form-group"><label>📧 Email</label><input type="email" id="inputVcardEmail" placeholder="email@contoh.com"></div><div class="form-group"><label>🏢 Perusahaan</label><input type="text" id="inputVcardOrg" placeholder="Perusahaan"></div>`;break;
+      }
+      document.getElementById('qrForm').innerHTML=html;
+    }
+
+    function getFormData(type){
+      switch(type){
+        case'url':return document.getElementById('inputUrl')?.value||null;
+        case'text':return document.getElementById('inputText')?.value||null;
+        case'whatsapp':const wa=document.getElementById('inputWa')?.value;if(!wa)return null;const msg=document.getElementById('inputWaMsg')?.value;return`https://wa.me/${wa}${msg?'?text='+encodeURIComponent(msg):''}`;
+        case'email':const email=document.getElementById('inputEmail')?.value;if(!email)return null;const subj=document.getElementById('inputEmailSubject')?.value,body=document.getElementById('inputEmailBody')?.value;return`mailto:${email}${subj?'?subject='+encodeURIComponent(subj):''}${body?'&body='+encodeURIComponent(body):''}`;
+        case'sms':const sn=document.getElementById('inputSmsNumber')?.value;if(!sn)return null;const sb=document.getElementById('inputSmsBody')?.value;return`sms:${sn}${sb?'?body='+encodeURIComponent(sb):''}`;
+        case'phone':const ph=document.getElementById('inputPhone')?.value;return ph?`tel:${ph}`:null;
+        case'wifi':const ssid=document.getElementById('inputWifiSsid')?.value;if(!ssid)return null;const pass=document.getElementById('inputWifiPass')?.value,enc=document.getElementById('inputWifiEnc')?.value;return`WIFI:T:${enc};S:${ssid};P:${pass};;`;
+        case'location':const lat=document.getElementById('inputLat')?.value,lng=document.getElementById('inputLng')?.value;if(!lat||!lng)return null;return`geo:${lat},${lng}`;
+        case'contact':const name=document.getElementById('inputVcardName')?.value;if(!name)return null;const vp=document.getElementById('inputVcardPhone')?.value,ve=document.getElementById('inputVcardEmail')?.value,vo=document.getElementById('inputVcardOrg')?.value;return`BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nTEL:${vp}\nEMAIL:${ve}\nORG:${vo}\nEND:VCARD`;
+        default:return null;
+      }
+    }
+
+    let currentQRData=null,logoImage=null;
+
+    document.getElementById('logoBtn')?.addEventListener('click',()=>document.getElementById('logoUpload').click());
+    document.getElementById('logoUpload')?.addEventListener('change',e=>{const file=e.target.files[0];if(file){const r=new FileReader();r.onload=ev=>{logoImage=new Image();logoImage.src=ev.target.result;logoImage.onload=()=>{document.getElementById('logoBtn').classList.add('hidden');document.getElementById('removeLogoBtn').classList.remove('hidden');if(currentQRData)generateQR(currentQRData);}};r.readAsDataURL(file);}});
+    document.getElementById('removeLogoBtn')?.addEventListener('click',()=>{logoImage=null;document.getElementById('logoUpload').value='';document.getElementById('logoBtn').classList.remove('hidden');document.getElementById('removeLogoBtn').classList.add('hidden');if(currentQRData)generateQR(currentQRData);});
+    document.getElementById('generateBtn')?.addEventListener('click',()=>{const d=getFormData(window.currentQRType);if(!d){showToast('⚠️ Mohon isi data','error');return;}generateQR(d);});
+
+    function generateQR(data){
+      currentQRData=data;const container=document.getElementById('qrContainer'),loading=document.getElementById('qrLoading'),dl=document.getElementById('downloadSection');
+      loading.classList.remove('hidden');container.innerHTML='';
+      const color=document.getElementById('qrColorCustom').value,bgColor=document.getElementById('qrBgColorCustom').value,size=parseInt(document.getElementById('qrSize').value),shape=document.querySelector('.shape-option.active')?.dataset.shape||'square';
+      setTimeout(()=>{
+        const canvas=document.createElement('canvas'),pad=50;canvas.width=size+pad*2;canvas.height=size+pad*2;
+        const ctx=canvas.getContext('2d');ctx.fillStyle=bgColor;ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.save();ctx.shadowColor='rgba(0,0,0,0.25)';ctx.shadowBlur=25;ctx.shadowOffsetX=5;ctx.shadowOffsetY=10;
+        const qrC=document.createElement('canvas');qrC.width=size;qrC.height=size;
+        QRCode.toCanvas(qrC,data,{width:size,margin:2,color:{dark:color,light:bgColor}},(err)=>{
+          if(err){showToast('❌ Gagal','error');loading.classList.add('hidden');return;}
+          ctx.beginPath();if(shape==='rounded-square')ctx.roundRect(pad,pad,size,size,20);else ctx.rect(pad,pad,size,size);ctx.clip();
+          ctx.drawImage(qrC,pad,pad,size,size);ctx.restore();
+          ctx.beginPath();if(shape==='rounded-square')ctx.roundRect(pad,pad,size,size,20);else ctx.rect(pad,pad,size,size);ctx.strokeStyle=color;ctx.lineWidth=3;ctx.stroke();
+          if(logoImage){const ls=Math.round(size*0.22),lx=pad+Math.round((size-ls)/2),ly=pad+Math.round((size-ls)/2);ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(lx+ls/2,ly+ls/2,ls/2+6,0,Math.PI*2);ctx.fill();ctx.save();ctx.beginPath();ctx.arc(lx+ls/2,ly+ls/2,ls/2,0,Math.PI*2);ctx.clip();ctx.drawImage(logoImage,lx,ly,ls,ls);ctx.restore();}
+          container.innerHTML='';container.appendChild(canvas);canvas.style.maxWidth='100%';canvas.style.height='auto';
+          loading.classList.add('hidden');dl.style.display='block';
+          const user=getCurrentUser(),history=getHistory();
+          history.unshift({id:Date.now(),username:user?.username||'guest',data,type:window.currentQRType,color,bgColor,shape,date:new Date().toISOString()});
+          localStorage.setItem(HISTORY_KEY,JSON.stringify(history.slice(0,100)));showToast('✅ QR dibuat!','success');
+        });
+      },400);
+    }
+
+    document.getElementById('downloadOptions')?.addEventListener('click',e=>{if(e.target.classList.contains('btn-download'))downloadQR(e.target.dataset.format);});
+    function downloadQR(f){
+      const c=document.querySelector('#qrContainer canvas');if(!c)return;
+      switch(f){
+        case'png':triggerDownload(c.toDataURL('image/png'),`QR-${Date.now()}.png`);break;
+        case'jpg':triggerDownload(c.toDataURL('image/jpeg',0.95),`QR-${Date.now()}.jpg`);break;
+        case'svg':QRCode.toString(currentQRData,{type:'svg',color:{dark:document.getElementById('qrColorCustom').value,light:document.getElementById('qrBgColorCustom').value}},(e,s)=>{if(e)return;const b=new Blob([s],{type:'image/svg+xml'});triggerDownload(URL.createObjectURL(b),`QR-${Date.now()}.svg`);});break;
+        case'pdf':const{jsPDF}=window.jspdf,s=parseInt(document.getElementById('qrSize').value),p=new jsPDF({orientation:'portrait',unit:'px',format:[s+120,s+120]});p.addImage(c.toDataURL('image/png'),'PNG',60,60,s+100,s+100);p.save(`QR-${Date.now()}.pdf`);break;
+      }showToast(`✅ QR diunduh (${f.toUpperCase()})`,'success');
+    }
+    function triggerDownload(url,fn){const a=document.createElement('a');a.download=fn;a.href=url;document.body.appendChild(a);a.click();document.body.removeChild(a);if(url.startsWith('blob:'))URL.revokeObjectURL(url);}
+
+    document.getElementById('copyQrBtn')?.addEventListener('click',async()=>{const c=document.querySelector('#qrContainer canvas');if(!c){showToast('⚠️ Generate dulu','error');return;}try{const b=await new Promise(r=>c.toBlob(r));await navigator.clipboard.write([new ClipboardItem({'image/png':b})]);showToast('📋 Disalin!','success');}catch(e){showToast('Gagal','error');}});
+    document.getElementById('shareQrBtn')?.addEventListener('click',async()=>{const c=document.querySelector('#qrContainer canvas');if(!c){showToast('⚠️ Generate dulu','error');return;}if(navigator.share){const b=await new Promise(r=>c.toBlob(r));try{await navigator.share({title:'QR Code',files:[new File([b],'QR.png',{type:'image/png'})]});}catch(e){}}});
+
+    // ========== HISTORY ==========
+    function loadHistory(){
+      const container=document.getElementById('historyList'),clearBtn=document.getElementById('clearHistoryBtn');
+      const user=getCurrentUser(),history=getHistory().filter(h=>h.username===user?.username);
+      if(!history.length){
+        container.innerHTML=`<div class="empty-state"><i class="fas fa-history"></i><p>Belum ada riwayat QR Code</p></div>`;
+        clearBtn.style.display='none';return;
+      }
+      clearBtn.style.display='block';
+      container.innerHTML=history.map(item=>`
+        <div class="history-item" data-id="${item.id}">
+          <canvas id="hist-${item.id}" width="120" height="120"></canvas>
+          <p style="font-size:10px;margin-top:6px;color:var(--text-secondary);">${new Date(item.date).toLocaleDateString('id-ID')}</p>
+          <button class="btn-secondary" style="margin-top:4px;padding:4px 8px;font-size:10px;" onclick="event.stopPropagation();deleteHistoryItem(${item.id})"><i class="fas fa-trash"></i></button>
+        </div>`).join('');
+      history.forEach(item=>{const c=document.getElementById(`hist-${item.id}`);if(c){QRCode.toCanvas(c,item.data,{width:120,margin:1,color:{dark:item.color||'#000',light:item.bgColor||'#fff'}});c.parentElement.addEventListener('click',e=>{if(e.target.tagName==='BUTTON')return;switchPage('generator',item.type);window.currentQRType=item.type;currentQRData=item.data;document.getElementById('qrColorCustom').value=item.color||'#000';document.getElementById('qrBgColorCustom').value=item.bgColor||'#fff';setTimeout(()=>generateQR(item.data),500);});}});
+    }
+    function deleteHistoryItem(id){const h=getHistory();localStorage.setItem(HISTORY_KEY,JSON.stringify(h.filter(i=>i.id!==id)));loadHistory();}
+    document.getElementById('clearHistoryBtn')?.addEventListener('click',()=>{if(confirm('Hapus semua?')){const u=getCurrentUser();localStorage.setItem(HISTORY_KEY,JSON.stringify(getHistory().filter(i=>i.username!==u?.username)));loadHistory();showToast('🗑️ Terhapus','success');}});
+
+    // ========== SCANNER ==========
+    let stream=null,scanning=false;
+    function initScanner(){
+      document.getElementById('startScanBtn').onclick=startCameraScan;
+      document.getElementById('scanFromFileBtn').onclick=()=>document.getElementById('scanFileInput').click();
+      document.getElementById('scanFileInput').onchange=scanFromFile;
+      document.getElementById('copyScanResult').onclick=()=>navigator.clipboard.writeText(document.getElementById('scanResultText').textContent).then(()=>showToast('📋 Disalin!','success'));
+    }
+    async function startCameraScan(){
+      const video=document.getElementById('scannerVideo'),ph=document.getElementById('scannerPlaceholder'),rd=document.getElementById('scannerResult'),btn=document.getElementById('startScanBtn');
+      if(scanning){stopScanner();btn.innerHTML='<i class="fas fa-camera"></i> Scan Kamera';ph.style.display='flex';return;}
+      rd.classList.add('hidden');
+      try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});video.srcObject=stream;video.style.display='block';ph.style.display='none';scanning=true;btn.innerHTML='<i class="fas fa-stop"></i> Stop';scanLoop(video,rd);}catch(e){showToast('❌ Tidak dapat mengakses kamera','error');}
+    }
+    function scanLoop(video,rd){if(!scanning)return;const c=document.createElement('canvas'),ctx=c.getContext('2d');function scan(){if(!scanning)return;if(video.readyState===video.HAVE_ENOUGH_DATA){c.width=video.videoWidth;c.height=video.videoHeight;ctx.drawImage(video,0,0);const code=jsQR(ctx.getImageData(0,0,c.width,c.height).data,c.width,c.height);if(code){rd.classList.remove('hidden');document.getElementById('scanResultText').textContent=code.data;scanning=false;video.style.display='none';if(stream)stream.getTracks().forEach(t=>t.stop());document.getElementById('startScanBtn').innerHTML='<i class="fas fa-camera"></i> Scan Kamera';document.getElementById('scannerPlaceholder').style.display='flex';showToast('✅ Terdeteksi!','success');return;}}requestAnimationFrame(scan);}requestAnimationFrame(scan);}
+    function stopScanner(){scanning=false;if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}const v=document.getElementById('scannerVideo');if(v){v.srcObject=null;v.style.display='none';}document.getElementById('scannerPlaceholder').style.display='flex';}
+    function scanFromFile(e){const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=ev=>{const img=new Image();img.onload=()=>{const c=document.createElement('canvas');c.width=img.width;c.height=img.height;const ctx=c.getContext('2d');ctx.drawImage(img,0,0);const code=jsQR(ctx.getImageData(0,0,c.width,c.height).data,c.width,c.height),rd=document.getElementById('scannerResult');if(code){rd.classList.remove('hidden');document.getElementById('scanResultText').textContent=code.data;showToast('✅ Ditemukan!','success');}else showToast('❌ Tidak ada QR','error');};img.src=ev.target.result;};r.readAsDataURL(file);}
+  </script>
+</body>
+</html>
